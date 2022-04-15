@@ -16,6 +16,7 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.example.cloudreveapp.common.Constant;
 import com.example.cloudreveapp.databinding.ActivityMainBinding;
+import com.example.cloudreveapp.ui.login.LoginAndSetting;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.File;
@@ -41,6 +42,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.String;
@@ -49,9 +51,7 @@ import java.lang.String;
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
-    private AppBarConfiguration appBarConfiguration;
     private WebView webView;
-    //private ProgressBar progressBar;
 
     private ValueCallback<Uri> uploadMessage;
     private ValueCallback<Uri[]> uploadMessageAboveL;
@@ -124,23 +124,6 @@ public class MainActivity extends AppCompatActivity {
         return 0;
     }
 
-    private void showInputDialog() {
-        /*@setView 装入一个EditView
-         */
-        final EditText editText = new EditText(MainActivity.this);
-        AlertDialog.Builder inputDialog =
-                new AlertDialog.Builder(MainActivity.this);
-        inputDialog.setTitle("我是一个输入Dialog").setView(editText);
-        inputDialog.setPositiveButton("确定",
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Toast.makeText(MainActivity.this,
-                                editText.getText().toString(),
-                                Toast.LENGTH_SHORT).show();
-                    }
-                }).show();
-    }
 
 
     @SuppressLint("JavascriptInterface")
@@ -148,46 +131,25 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if(checkUserLocalState()>0){
+        if(!Constant.isLogin) {
+            Log.i("TAG", "------------------------info first in");
+            Intent intent = new Intent(this, LoginAndSetting.class);
+            startActivity(intent );
 
-        }else {
-            final EditText et = new EditText(this);
-            final EditText et2 = new EditText(this);
+            for (; ; ) {
+                try {
+                    Thread.sleep(300);
+                    if (Constant.isLogin) {
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
 
-            new AlertDialog.Builder(this).setTitle("请输入地址 ")
-                    .setIcon(android.R.drawable.ic_dialog_info)
-                    .setView(et)
-                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            String input = et.getText().toString();
-                            if (input.equals("")) {
-                                Toast.makeText(getApplicationContext(), " 内容不能为空！" + input, Toast.LENGTH_LONG).show();
-                            }
-                            else {
-                                 Log.i("TAG","input: "+input);
-                            }
-                        }
-                    })
-                    .setNegativeButton("取消", null)
-                    .show();
-            new AlertDialog.Builder(this).setTitle("请输入 账户/密码")
-                    .setIcon(android.R.drawable.ic_dialog_info)
-                    .setView(et2)
-                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            String input = et2.getText().toString();
-                            if (input.equals("")) {
-                                Toast.makeText(getApplicationContext(), " 内容不能为空！" + input, Toast.LENGTH_LONG).show();
-                            }
-                            else {
-                                 Log.i("TAG","input: "+input);
-                            }
-                        }
-                    })
-                    .setNegativeButton("取消", null)
-                    .show();
         }
 
+        Log.i("TAG11","00000000this is in ");
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
