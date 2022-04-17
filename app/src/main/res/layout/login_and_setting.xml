@@ -9,9 +9,9 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="55dp"
-        android:text="登录界面"
+        android:text="CloudreveApp登录"
         android:gravity="center"
-        android:textSize="40sp"
+        android:textSize="32sp"
         />
     <View android:layout_width="match_parent" android:layout_height="@dimen/dp_1"
         android:background="@color/orange_main"
@@ -32,7 +32,7 @@
             android:layout_marginLeft="@dimen/margin_tiny"
             android:layout_marginBottom="@dimen/margin_tiny"
             android:scaleType="fitXY"
-            android:src="@drawable/icon_login_account" />
+            />
 
         <EditText
             android:id="@+id/et_host"
@@ -44,7 +44,7 @@
             android:layout_marginBottom="@dimen/margin_tiny"
             android:layout_toRightOf="@+id/img_host"
             android:background="@null"
-            android:hint="@string/account"
+            android:hint="@string/host"
             android:maxLines="1"
             android:textColor="@android:color/black"
             android:textColorHint="@color/tv_gray_deep"

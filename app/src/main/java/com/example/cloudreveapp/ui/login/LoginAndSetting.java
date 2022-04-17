@@ -3,18 +3,29 @@ package com.example.cloudreveapp.ui.login;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.CompoundButton;
 
+import com.example.cloudreveapp.MainActivity;
 import com.example.cloudreveapp.R;
-import com.example.cloudreveapp.common.Constant;
+import com.example.cloudreveapp.common.Common;
+import com.example.cloudreveapp.common.http;
 
 import android.text.InputType;
 import android.widget.*;
 
-public class LoginAndSetting extends Activity implements View.OnClickListener, CompoundButton.OnCheckedChangeListener{
+import org.json.JSONObject;
+
+import okhttp3.Headers;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+public class LoginAndSetting extends Activity implements View.OnClickListener, CompoundButton.OnCheckedChangeListener {
 
 
     //布局内的控件
@@ -22,11 +33,11 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
     private EditText et_name;
     private EditText et_password;
     private Button mLoginBtn;
-//    private CheckBox checkBox_password;
-//    private CheckBox checkBox_login;
     private ImageView iv_see_password;
 
     private Dialog mLoadingDialog; //显示正在加载的对话框
+
+    private static String LocalStorageName = "SP";
 
 
     @Override
@@ -47,20 +58,7 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
 //            checkBox_password.setChecked(false);//取消记住密码的复选框
 //            checkBox_login.setChecked(false);//取消自动登录的复选框
         }
-        //判断是否记住密码
-        if (remenberPassword()) {
-            //checkBox_password.setChecked(true);//勾选记住密码
-            setTextNameAndPassword();//把密码和账号输入到输入框中
-        } else {
-            setTextName();//把用户账号放到输入账号的输入框中
-        }
 
-        //判断是否自动登录
-        if (autoLogin()) {
-           // checkBox_login.setChecked(true);
-           // login();//去登录就可以
-
-        }
     }
 
     /**
@@ -84,8 +82,8 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
      */
     public String getLocalName() {
         Context ctx = LoginAndSetting.this;
-        SharedPreferences sp = ctx.getSharedPreferences("LOCAL", MODE_PRIVATE);
-        String userName = sp.getString(Constant.USER_NAME, "");
+        SharedPreferences sp = ctx.getSharedPreferences(LocalStorageName, MODE_PRIVATE);
+        String userName = sp.getString(Common.CONST_USER_NAME, "");
 
         return userName;
     }
@@ -96,9 +94,9 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
      */
     public String getLocalPassword() {
         Context ctx = LoginAndSetting.this;
-        SharedPreferences sp = ctx.getSharedPreferences("SP", MODE_PRIVATE);
+        SharedPreferences sp = ctx.getSharedPreferences(LocalStorageName, MODE_PRIVATE);
 
-        String userPwd = sp.getString(Constant.USER_PWD, "");
+        String userPwd = sp.getString(Common.CONST_USER_PWD, "");
         return userPwd;
 
     }
@@ -125,34 +123,73 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
         et_host = (EditText) findViewById(R.id.et_host);
         et_name = (EditText) findViewById(R.id.et_account);
         et_password = (EditText) findViewById(R.id.et_password);
-//        checkBox_password = (CheckBox) findViewById(R.id.checkBox_password);
-//      checkBox_login = (CheckBox) findViewById(R.id.checkBox_login);
         iv_see_password = (ImageView) findViewById(R.id.iv_see_password);
     }
 
     private void setupEvents() {
         mLoginBtn.setOnClickListener(this);
-//        checkBox_password.setOnCheckedChangeListener(this);
-//        checkBox_login.setOnCheckedChangeListener(this);
         iv_see_password.setOnClickListener(this);
 
     }
 
     /**
-     * 判断是否是第一次登陆
+     * 第一次自动登陆
      */
     private boolean firstLogin() {
 
         Context ctx = LoginAndSetting.this;
-        SharedPreferences sp = ctx.getSharedPreferences("SP", MODE_PRIVATE);
+        SharedPreferences sp = ctx.getSharedPreferences(LocalStorageName, MODE_PRIVATE);
 
-        String userName = sp.getString(Constant.USER_NAME, "");
-        String userPwd = sp.getString(Constant.USER_PWD, "");
-        String userHost = sp.getString(Constant.HOST, "");
+        String userHost = sp.getString(Common.CONST_HOST, "");
+        String userName = sp.getString(Common.CONST_USER_NAME, "");
+        String userPwd = sp.getString(Common.CONST_USER_PWD, "");
         if (userHost.length() + userName.length() + userPwd.length() == 0) {
             return true;
         }
+        Log.i("firstLogin", "host " + userHost+", userName "+userName);
 
+        this.et_host.setText(userHost);
+        this.et_name.setText(userName);
+        this.et_password.setText(userPwd);
+
+        showLoading();//显示加载框
+        Thread loginRunnable = new Thread() {
+
+            @Override
+            public void run() {
+                super.run();
+                setLoginBtnClickable(false);//点击登录后，设置登录按钮不可点击状态
+
+                try {
+                    //判断账号和密码
+                    String msg[] = checkLoginOK(userHost, userName, userPwd);
+                    if (msg == null) {
+                        showToast("自动登录失败，请手动登录");
+                        setLoginBtnClickable(true);
+                        return  ;
+                    } else if (msg[0].equals("success")) {
+                        showToast("自动登录成功");
+                        saveUserInfo();//记录下当前用户信息
+                        Common.loginCookie=msg[1];
+                        setLoginBtnClickable(true);  //这里解放登录按钮，设置为可以点击
+                        hideLoading();//隐藏加载框
+                        Common.isLoginTag = true;
+                        Intent intent = new Intent(ctx, MainActivity.class);
+                        startActivity(intent);
+                        finish();
+                    } else {
+                        showToast(msg[0]);
+                        return  ;
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    showToast("登录失败，请检查网络后再试");
+                }
+                setLoginBtnClickable(true);
+            }
+        };
+        loginRunnable.start();
         return false;
     }
 
@@ -160,8 +197,7 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_login:
-                loadUserName();    //无论如何保存一下用户名
-                login(); //登陆
+                login( ); //登陆
                 break;
             case R.id.iv_see_password:
                 setPasswordVisibility();    //改变图片并设置输入框的文本可见或不可见
@@ -170,22 +206,27 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
         }
     }
 
+
+
     /**
      * 模拟登录情况
      * 用户名csdn，密码123456，就能登录成功，否则登录失败
      */
-    private void login() {
+    private void login( ) {
 
-        Constant.isLogin =true;
-        finish();
-
+        Context ctx = LoginAndSetting.this;
         //先做一些基本的判断，比如输入的用户命为空，密码为空，网络不可用多大情况，都不需要去链接服务器了，而是直接返回提示错误
-        if (getUserName().isEmpty()){
+        if (getHost().isEmpty()) {
+            showToast("你输入的服务器地址为空！");
+            return;
+        }
+
+        if (getUserName().isEmpty()) {
             showToast("你输入的账号为空！");
             return;
         }
 
-        if (getPassword().isEmpty()){
+        if (getPassword().isEmpty()) {
             showToast("你输入的密码为空！");
             return;
         }
@@ -198,46 +239,103 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
                 super.run();
                 setLoginBtnClickable(false);//点击登录后，设置登录按钮不可点击状态
 
-
-                //睡眠3秒
                 try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
+                    //判断账号和密码
+                    String msg[] = checkLoginOK(getHost(), getUserName(), getPassword());
+                    if (msg == null) {
+                        showToast("内部错误，请重新尝试！");
+                        return;
+                    } else if (msg[0].equals("success")) {
+                        showToast("登录成功");
+                        saveUserInfo();//记录下当前用户信息
+                        Common.loginCookie=msg[1];
+                        setLoginBtnClickable(true);  //这里解放登录按钮，设置为可以点击
+                        hideLoading();//隐藏加载框
+                        Common.isLoginTag =true;
+
+                        Intent intent = new Intent(ctx, MainActivity.class);
+                        startActivity(intent );
+                        finish();
+
+                    } else {
+                        showToast(msg[0]);
+                        return;
+                    }
+
+                } catch (Exception e) {
                     e.printStackTrace();
+                    showToast("登录失败，请检查网络后再试");
                 }
-
-                //判断账号和密码
-                if (getUserName().equals("csdn") && getPassword().equals("123456")) {
-                    showToast("登录成功");
-                    loadCheckBoxState();//记录下当前用户记住密码和自动登录的状态;
-
-                    finish();//关闭页面
-                } else {
-                    showToast("输入的登录账号或密码不正确");
-                }
-
-                setLoginBtnClickable(true);  //这里解放登录按钮，设置为可以点击
-                hideLoading();//隐藏加载框
             }
         };
         loginRunnable.start();
 
+    }
 
+    String[] checkLoginOK(String host,String userName,String userPwd ) throws Exception {
+
+        // POST / GET 都可
+        //curl '$HOST/api/v3/user/session' \
+        //  -H 'content-type: application/json' \
+        //  -d '{"userName": "xxxxxxxxxx","Password":"xxxxxx","captchaCode":""}'
+        String url = host + "/api/v3/user/session";
+
+        okhttp3.Headers.Builder headersbuilder = new okhttp3.Headers.Builder();
+        headersbuilder.add("content-type", "application/json");
+        String cookie = "";
+        JSONObject json = new JSONObject();
+        try {
+            MediaType JSON = MediaType.parse("application/json;charset=utf-8");
+            json.put("userName", userName);
+            json.put("Password", userPwd);
+            json.put("captchaCode", userName);
+            RequestBody requestBody = RequestBody.create(JSON, String.valueOf(json));
+            Response response = http.DoPost(url, headersbuilder.build(),requestBody);
+
+            String result = response.body().string();
+
+            JSONObject jsonAll = new JSONObject(result);
+
+            int code = (Integer) jsonAll.get("code");
+            if (code != 0) {
+                String msg = (String) jsonAll.get("msg");
+                Log.e("Login", "login fail : code " + code + " msg: " + msg);
+                return new String[]{msg};
+            }
+            JSONObject data = jsonAll.getJSONObject("data");
+            JSONObject policy = data.getJSONObject("policy");
+            String upUrl = (String) policy.get("upUrl");
+            if (!upUrl.isEmpty()) {
+                Common.upLoadURL = upUrl;
+            }
+
+            Headers rh = response.headers();
+            cookie = rh.get("set-cookie");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+
+        return new String[]{"success", cookie};
     }
 
 
     /**
      * 保存用户账号
      */
-    public void loadUserName() {
+    public void saveUserInfo() {
         Context ctx = LoginAndSetting.this;
-        SharedPreferences sp = ctx.getSharedPreferences("SP", MODE_PRIVATE);
+        SharedPreferences sp = ctx.getSharedPreferences(LocalStorageName, MODE_PRIVATE);
         SharedPreferences.Editor ed = sp.edit();
 
-        ed.putString(Constant.HOST, getHost());
-        ed.putString(Constant.USER_NAME, getUserName());
-        ed.putString(Constant.USER_PWD, getPassword());
+        ed.putString(Common.CONST_HOST, getHost());
+        ed.putString(Common.CONST_USER_NAME, getUserName());
+        ed.putString(Common.CONST_USER_PWD, getPassword());
         ed.apply();
+
+        Common.UserHostURL = getHost();
+        Common.UserName = getUserName();
+        Common.UserPwd = getPassword();
 
     }
 
@@ -280,28 +378,6 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
     }
 
 
-    /**
-     * 保存用户选择“记住密码”和“自动登陆”的状态
-     */
-    private void loadCheckBoxState() {
-      //  loadCheckBoxState(checkBox_password, checkBox_login);
-    }
-
-    /**
-     * 保存按钮的状态值
-     */
-    public void loadCheckBoxState(CheckBox checkBox_password, CheckBox checkBox_login) {
-
-
-
-        Context ctx = LoginAndSetting.this;
-        SharedPreferences sp = ctx.getSharedPreferences("SP", MODE_PRIVATE);
-
-        String userPwd = sp.getString(Constant.USER_PWD, "");
-
-
-
-    }
 
     /**
      * 是否可以点击登录按钮
@@ -337,25 +413,6 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
             });
 
         }
-    }
-
-
-    /**
-     * CheckBox点击时的回调方法 ,不管是勾选还是取消勾选都会得到回调
-     *
-     * @param buttonView 按钮对象
-     * @param isChecked  按钮的状态
-     */
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-//        if (buttonView == checkBox_password) {  //记住密码选框发生改变时
-//            if (!isChecked) {   //如果取消“记住密码”，那么同样取消自动登陆
-//                checkBox_login.setChecked(false);
-//            }
-//        } else if (buttonView == checkBox_login) {   //自动登陆选框发生改变时
-//            if (isChecked) {   //如果选择“自动登录”，那么同样选中“记住密码”
-//                checkBox_password.setChecked(true);
-//            }
-//        }
     }
 
 
@@ -399,4 +456,8 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
     }
 
 
+    @Override
+    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+
+    }
 }

@@ -3,26 +3,25 @@ package com.example.cloudreveapp;
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
-import com.example.cloudreveapp.common.Constant;
+import com.example.cloudreveapp.common.Common;
 import com.example.cloudreveapp.databinding.ActivityMainBinding;
+import com.example.cloudreveapp.task.fileSyncTask;
+import com.example.cloudreveapp.ui.dialog.loadingDialog;
 import com.example.cloudreveapp.ui.login.LoginAndSetting;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -32,18 +31,12 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
-import android.view.View;
 import android.webkit.JsResult;
 import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import java.lang.String;
 
@@ -106,11 +99,11 @@ public class MainActivity extends AppCompatActivity {
 //        editor.putString("account", "alllens");
 //         editor.commit();
 
-        String host = sp.getString(Constant.HOST, "");
-        String userName = sp.getString(Constant.USER_NAME, "");
-        String userPwd = sp.getString(Constant.USER_PWD, "");
+        String host = sp.getString(Common.CONST_HOST, "");
+        String userName = sp.getString(Common.CONST_USER_NAME, "");
+        String userPwd = sp.getString(Common.CONST_USER_PWD, "");
 
-        if (host.equals(Constant.EmptyString)) {
+        if (host.equals(Common.EmptyString)) {
             return 0;
         }
 
@@ -124,32 +117,49 @@ public class MainActivity extends AppCompatActivity {
         return 0;
     }
 
-
-
+    @RequiresApi(api = Build.VERSION_CODES.S)
     @SuppressLint("JavascriptInterface")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Common.init();
 
-        if(!Constant.isLogin) {
+        if(!Common.isLoginTag) {
+
+            // todo set cookies
             Log.i("TAG", "------------------------info first in");
             Intent intent = new Intent(this, LoginAndSetting.class);
             startActivity(intent );
+            return ;
+        }
 
-            for (; ; ) {
+        loadingDialog a = new loadingDialog(this);
+        a.show();
+        new Thread() {
+            @Override
+            public void run() {
+                super.run();
                 try {
-                    Thread.sleep(300);
-                    if (Constant.isLogin) {
-                        break;
-                    }
+                    Thread.sleep(1100);
+                    a.dismiss();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
+        }.start();
+        int PERMISSION_REQUEST = 1;
 
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            String[] PERMISSIONS = {android.Manifest.permission.READ_EXTERNAL_STORAGE};
+            ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_REQUEST);
         }
 
-        Log.i("TAG11","00000000this is in ");
+
+        Log.i("TAG11"," this is login msag ,cookie"+Common.loginCookie);
+        fileSyncTask fst = new fileSyncTask(Common.SyncPaths, Common.fileTypes,
+                Common.UserHostURL,Common.loginCookie );
+        fst.start();
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());

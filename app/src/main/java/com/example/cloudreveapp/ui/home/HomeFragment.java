@@ -14,17 +14,22 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.webkit.DownloadListener;
 import android.webkit.JsResult;
 import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -34,9 +39,17 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.cloudreveapp.R;
+import com.example.cloudreveapp.common.Common;
 import com.example.cloudreveapp.databinding.FragmentHomeBinding;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 
 public class HomeFragment extends Fragment {
@@ -69,23 +82,23 @@ public class HomeFragment extends Fragment {
         startActivity(intent);
     }
 
-
-
     @SuppressLint("JavascriptInterface")
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
 
         webView = (WebView) view.findViewById(R.id.webview);
+        Map<String, String> header = new HashMap<>();
+        header.put("cookie", Common.loginCookie);
 
         WebSettings webSettings=webView.getSettings();
         webSettings.setJavaScriptEnabled(true);//允许使用js
         webSettings.setAllowFileAccess(true );
         webSettings.setJavaScriptCanOpenWindowsAutomatically(true );
         webSettings.setAllowFileAccessFromFileURLs(true );
-        webSettings.setSavePassword(true );
+        webSettings.setSavePassword(true );;
+        WebSettings settings = webView.getSettings();
+        settings.setDomStorageEnabled(true);
 //        webView.loadUrl("file:///android_asset/test.html");//加载asset文件夹下html
-        webView.loadUrl("https://yuyuyu123.dynv6.net");//加载url
-
 
         //使用webview显示html代码
 //        webView.loadDataWithBaseURL(null,"<html><head><title> 欢迎您 </title></head>" +
@@ -94,8 +107,11 @@ public class HomeFragment extends Fragment {
         webView.addJavascriptInterface(this,"android");//添加js监听 这样html就能调用客户端
         webView.setWebChromeClient(webChromeClient);
         webView.setWebViewClient(webViewClient);
-        WebSettings settings = webView.getSettings();
-        settings.setDomStorageEnabled(true);
+
+        webView.setWebContentsDebuggingEnabled(true);
+
+        synCookies(Common.UserHostURL);
+        webView.loadUrl(Common.UserHostURL,header);//加载url
 
         webView.setWebChromeClient(new WebChromeClient() {
 
@@ -219,6 +235,64 @@ public class HomeFragment extends Fragment {
             return super.shouldOverrideUrlLoading(view, url);
         }
 
+        // Handle API until level 21
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+            //API 21以下，此处不考虑兼容性
+            return super.shouldInterceptRequest(view, url);
+        }
+
+        // Handle API 21+
+        @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+            String url = request.getUrl().toString();
+            //return getNewResponse(url, request.getRequestHeaders());
+            return super.shouldInterceptRequest(view, url);
+        }
+
+        private WebResourceResponse getNewResponse(String url, Map<String, String> headers) {
+
+            try {
+                OkHttpClient httpClient = new OkHttpClient();
+
+                Request.Builder builder = new Request.Builder()
+                        .url(url.trim())
+                        .addHeader("cookie", Common.loginCookie);
+
+                Set<String> keySet = headers.keySet();
+                for (String key : keySet) {
+                    builder.addHeader(key, headers.get(key));
+                }
+
+                Request request = builder.build();
+
+                final Response response = httpClient.newCall(request).execute();
+
+                String conentType = response.header("Content-Type", response.body().contentType().type());
+                String temp = conentType.toLowerCase();
+                if (temp.contains("charset=utf-8")) {
+                    conentType = conentType.replaceAll("(?i)" + "charset=utf-8", "");//不区分大小写的替换
+                }
+                if (conentType.contains(";")) {
+                    conentType = conentType.replaceAll(";", "");
+                    conentType = conentType.trim();
+                }
+
+                return new WebResourceResponse(
+                        conentType,
+                        response.header("Content-Encoding", "utf-8"),
+                        response.body().byteStream()
+                );
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+
+        }
+
+
     };
 
 
@@ -255,5 +329,51 @@ public class HomeFragment extends Fragment {
         }
 
     };
+
+    /**
+     * 同步set cookie
+     */
+    public void synCookies(String url) {
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        cookieManager.acceptCookie();
+        cookieManager.removeSessionCookie();// 移除
+        cookieManager.removeAllCookie();
+
+        //cloudreve-session=XXXXXXX; Path=/; Expires=Sun, 24 Apr 2022 07:24:58 GMT; Max-Age=604800; HttpOnly
+
+        String cookie = Common.loginCookie;
+        if (cookie.isEmpty()) {
+            Log.e("Cookes", "cookie is empty!!");
+            return;
+        }
+
+        Log.i("Cookes", "set cookie is "+cookie);
+
+        cookieManager.setCookie(url, "cloudreve-session=" + getCookieName(cookie, "cloudreve-session"));
+        cookieManager.setCookie(url, "path_tmp=" + getCookieName(cookie, "Path"));
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            cookieManager.flush();
+        }
+    }
+
+    String getCookieName(String cookie,String name  ) {
+        String cks[] = cookie.split("; ");
+//        if (cks.length < 5) {
+//            Log.e("Cookes", "cookie split cks size is " + cks.length);
+//            return "";
+//        }
+        for (String n : cks) {
+            String kv[] = n.split("=");
+            if (kv.length < 2) {
+                continue;
+            }
+            if (kv[0].equals(name)) {
+                return kv[1];
+            }
+        }
+        return "";
+    }
 
 }
