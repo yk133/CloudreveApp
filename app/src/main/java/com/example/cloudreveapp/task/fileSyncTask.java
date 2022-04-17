@@ -2,6 +2,7 @@ package com.example.cloudreveapp.task;
 
 import android.util.Log;
 
+import com.example.cloudreveapp.common.Common;
 import com.example.cloudreveapp.common.utils;
 
 import org.json.JSONArray;
@@ -24,6 +25,7 @@ class FileInfo {
 
 public class fileSyncTask extends  Thread {
     String[] paths;
+    String[] notInList;
     String[] fileTypes;
     String url;
     String cookies;
@@ -38,7 +40,9 @@ public class fileSyncTask extends  Thread {
         this.fileTypes = inFileTypes;
         this.url = url;
         this.cookies = cookies;
-
+        this.notInList = new String[]{
+          "/Pictures/weibo/"
+        };
         SavedCache.clear();
 
     }
@@ -56,9 +60,10 @@ public class fileSyncTask extends  Thread {
 
         Log.i("TAG", "fs size "+fs );
         List<FileInfo> batchList = new ArrayList<>();
-        for(FileInfo x : fs) {
-            Log.i("TAG", x.Path + ",," + x.MD5);
+        for(FileInfo x : fs){
+            Log.i("TAG11"," file "+x.Path);
         }
+
         for (FileInfo fi : fs) {
             if (index % batchSize == 0) {
                 // check file is exists
@@ -72,13 +77,14 @@ public class fileSyncTask extends  Thread {
 
     List<FileInfo> getFilePaths() {
 
-        Log.i("TAG",
-                "getFilePaths"+ "paths"+ paths[1]+ " "+fileTypes[0]+" "+url+" "+cookies);
-
         List<FileInfo> fileList = new ArrayList<FileInfo>();
         for (String path : paths) {
             List<FileInfo> fl = getAllFiles(path, fileTypes);
-            if (fl != null) fileList.addAll(fl);
+            for (FileInfo x : fl) {
+                int flag=0;
+                for (String n : notInList) if (x.Path.contains(n))flag ++;
+                if(flag==0)fileList.add(x);
+            }
         }
 
         return fileList;
@@ -104,8 +110,6 @@ public class fileSyncTask extends  Thread {
 
         List<FileInfo> fileList = new ArrayList<FileInfo>();
         for (File fs : files) {//遍历目录
-            Log.i("TAG",
-                    "files "+ fs.getAbsolutePath()+" "+ fs.isFile() );
             if (fs.isFile()) {
 
                 for (String type : types) {
