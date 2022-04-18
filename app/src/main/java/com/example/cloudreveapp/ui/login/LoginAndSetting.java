@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -14,10 +15,14 @@ import com.example.cloudreveapp.MainActivity;
 import com.example.cloudreveapp.R;
 import com.example.cloudreveapp.common.Common;
 import com.example.cloudreveapp.common.http;
+import com.example.cloudreveapp.rpc.login;
 
 import android.text.InputType;
 import android.widget.*;
 
+import androidx.core.app.ActivityCompat;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import okhttp3.Headers;
@@ -101,22 +106,6 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
 
     }
 
-    /**
-     * 判断是否自动登录
-     */
-    private boolean autoLogin() {
-
-        return true;
-    }
-
-    /**
-     * 判断是否记住密码
-     */
-    private boolean remenberPassword() {
-
-        return true;
-    }
-
 
     private void initViews() {
         mLoginBtn = (Button) findViewById(R.id.btn_login);
@@ -136,6 +125,7 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
      * 第一次自动登陆
      */
     private boolean firstLogin() {
+        getPermission();
 
         Context ctx = LoginAndSetting.this;
         SharedPreferences sp = ctx.getSharedPreferences(LocalStorageName, MODE_PRIVATE);
@@ -162,11 +152,11 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
 
                 try {
                     //判断账号和密码
-                    String msg[] = checkLoginOK(userHost, userName, userPwd);
+                    String msg[] = login.checkLoginOK(userHost, userName, userPwd);
                     if (msg == null) {
                         showToast("自动登录失败，请手动登录");
                         setLoginBtnClickable(true);
-                        return  ;
+
                     } else if (msg[0].equals("success")) {
                         showToast("自动登录成功");
                         saveUserInfo();//记录下当前用户信息
@@ -177,6 +167,7 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
                         Intent intent = new Intent(ctx, MainActivity.class);
                         startActivity(intent);
                         finish();
+                        return;
                     } else {
                         showToast(msg[0]);
 
@@ -206,12 +197,22 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
         }
     }
 
+    void getPermission(){
+        int PERMISSION_REQUEST = 1;
+
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            String[] PERMISSIONS = {android.Manifest.permission.READ_EXTERNAL_STORAGE};
+            ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_REQUEST);
+        }
+    }
 
 
     /**
      * login
      */
     private void login( ) {
+        getPermission();
 
         Context ctx = LoginAndSetting.this;
         //先做一些基本的判断，比如输入的用户命为空，密码为空，网络不可用多大情况，都不需要去链接服务器了，而是直接返回提示错误
@@ -240,10 +241,9 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
 
                 try {
                     //判断账号和密码
-                    String msg[] = checkLoginOK(getHost(), getUserName(), getPassword());
+                    String msg[] = login.checkLoginOK(getHost(), getUserName(), getPassword());
                     if (msg == null) {
                         showToast("内部错误，请重新尝试！");
-
                     } else if (msg[0].equals("success")) {
                         showToast("登录成功");
                         saveUserInfo();//记录下当前用户信息
@@ -271,52 +271,6 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
 
     }
 
-    String[] checkLoginOK(String host,String userName,String userPwd ) throws Exception {
-
-        // POST / GET 都可
-        //curl '$HOST/api/v3/user/session' \
-        //  -H 'content-type: application/json' \
-        //  -d '{"userName": "xxxxxxxxxx","Password":"xxxxxx","captchaCode":""}'
-        String url = host + "/api/v3/user/session";
-
-        okhttp3.Headers.Builder headersbuilder = new okhttp3.Headers.Builder();
-        headersbuilder.add("content-type", "application/json");
-        String cookie = "";
-        JSONObject json = new JSONObject();
-        try {
-            MediaType JSON = MediaType.parse("application/json;charset=utf-8");
-            json.put("userName", userName);
-            json.put("Password", userPwd);
-            json.put("captchaCode", userName);
-            RequestBody requestBody = RequestBody.create(JSON, String.valueOf(json));
-            Response response = http.DoPost(url, headersbuilder.build(),requestBody);
-
-            String result = response.body().string();
-
-            JSONObject jsonAll = new JSONObject(result);
-
-            int code = (Integer) jsonAll.get("code");
-            if (code != 0) {
-                String msg = (String) jsonAll.get("msg");
-                Log.e("Login", "login fail : code " + code + " msg: " + msg);
-                return new String[]{msg};
-            }
-            JSONObject data = jsonAll.getJSONObject("data");
-            JSONObject policy = data.getJSONObject("policy");
-            String upUrl = (String) policy.get("upUrl");
-            if (!upUrl.isEmpty()) {
-                Common.upLoadURL = upUrl;
-            }
-
-            Headers rh = response.headers();
-            cookie = rh.get("set-cookie");
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw e;
-        }
-
-        return new String[]{"success", cookie};
-    }
 
 
     /**

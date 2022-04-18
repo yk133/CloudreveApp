@@ -29,22 +29,25 @@ public class Common {
     static public String UserPwd = "";
 
     static public String[] SyncPaths;
+    static public String[] NotSyncPaths;
     static public String[] fileTypes;
 
     @RequiresApi(api = Build.VERSION_CODES.S)
     public static void init() {
 
         String sdcardPath = Environment.getExternalStorageDirectory().getPath();
-        String paths[] = new String[]{
+        SyncPaths= new String[]{
                 sdcardPath + File.separator + "tencent/MicroMsg/WeiXin/",
                 sdcardPath + File.separator + "Download/",
                 sdcardPath + File.separator + "DCIM/",
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getPath()
         };
+        NotSyncPaths = new String[]{
+                sdcardPath + File.separator + "/Pictures/weibo/",
+        };
 
-        SyncPaths = paths;
         //Types
-        String ft[] = new String[]{
+        fileTypes= new String[]{
                 // pictures
                 ".jpg",
                 ".jpeg",
@@ -71,7 +74,6 @@ public class Common {
                 ".csv",
                 ".md"};
 
-        fileTypes = ft;
     }
 
 }

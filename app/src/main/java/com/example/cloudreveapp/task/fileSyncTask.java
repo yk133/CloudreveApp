@@ -1,9 +1,13 @@
 package com.example.cloudreveapp.task;
 
+import static com.example.cloudreveapp.rpc.file.SearchFileByMD5s;
+
 import android.util.Log;
 
 import com.example.cloudreveapp.common.Common;
 import com.example.cloudreveapp.common.utils;
+import com.example.cloudreveapp.proto.SearchFile;
+import com.example.cloudreveapp.rpc.file;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,7 +29,7 @@ class FileInfo {
 
 public class fileSyncTask extends  Thread {
     String[] paths;
-    String[] notInList;
+    String[] notInPaths;
     String[] fileTypes;
     String url;
     String cookies;
@@ -35,16 +39,13 @@ public class fileSyncTask extends  Thread {
     // SavedCache key: file path, value: md5
     private static Map<String, String> SavedCache = new HashMap<String, String>();
 
-    public fileSyncTask(String[] inPaths, String[] inFileTypes, String url, String cookies) {
+    public fileSyncTask(String[] inPaths, String[] notInPaths, String[] inFileTypes, String url, String cookies) {
         this.paths = inPaths;
         this.fileTypes = inFileTypes;
         this.url = url;
         this.cookies = cookies;
-        this.notInList = new String[]{
-          "/Pictures/weibo/"
-        };
+        this.notInPaths = notInPaths;
         SavedCache.clear();
-
     }
 
     @Override
@@ -58,21 +59,24 @@ public class fileSyncTask extends  Thread {
         List<FileInfo> fs = getFilePaths();
         int index = 1;
 
-        Log.i("TAG", "fs size "+fs );
+        Log.i("TAG", "fs size " + fs);
         List<FileInfo> batchList = new ArrayList<>();
-        for(FileInfo x : fs){
-            Log.i("TAG11"," file "+x.Path);
+        for (FileInfo x : fs) {
+            Log.i("TAG11", " file " + x.Path);
         }
 
         for (FileInfo fi : fs) {
             if (index % batchSize == 0) {
-                // check file is exists
-                checkFileAndUpload(batchList);
-            } else {
+                // check file exists in cloud
+                checkFileAndUploadBatch(batchList);
+
+
                 batchList.clear();
             }
             batchList.add(fi);
         }
+        checkFileAndUploadBatch(batchList);
+
     }
 
     List<FileInfo> getFilePaths() {
@@ -80,12 +84,10 @@ public class fileSyncTask extends  Thread {
         List<FileInfo> fileList = new ArrayList<FileInfo>();
         for (String path : paths) {
             List<FileInfo> fl = getAllFiles(path, fileTypes);
-            if(fl!=null) {
-                for (FileInfo x : fl) {
-                    int flag = 0;
-                    for (String n : notInList) if (x.Path.contains(n)) flag++;
-                    if (flag == 0) fileList.add(x);
-                }
+            for (FileInfo x : fl) {
+                int flag = 0;
+                for (String n : notInPaths) if (x.Path.contains(n)) flag++;
+                if (flag == 0) fileList.add(x);
             }
         }
 
@@ -99,7 +101,6 @@ public class fileSyncTask extends  Thread {
      * @param types   查询类型，比如mp3什么的
      */
     public static List<FileInfo> getAllFiles(String dirPath, String[] types) {
-
         List<FileInfo> fileList = new ArrayList<FileInfo>();
         File f = new File(dirPath);
         if (!f.exists()) {//判断路径是否存在
@@ -132,8 +133,28 @@ public class fileSyncTask extends  Thread {
         return fileList;
     }
 
-    void checkFileAndUpload(List<FileInfo>  fi) {
+    // checkFileAndUpload check and update
+    void checkFileAndUploadBatch(List<FileInfo> fi) {
+        if (fi == null) {
+            Log.w("File", "checkFileAndUpload fi is null ");
+            return;
+        }
+        JSONArray ja = new JSONArray();
+        for (FileInfo f : fi) {
+            ja.put(f.MD5);
+        }
 
+        try {
+
+            JSONObject body = new JSONObject();
+            body.put("type", "md5");
+            body.put("md5", ja);
+            List<SearchFile> res = file.SearchFileByMD5s(Common.UserHostURL, Common.loginCookie, body);
+
+        } catch (Exception e) {
+            Log.e("file", e.toString());
+
+        }
     }
 
 }

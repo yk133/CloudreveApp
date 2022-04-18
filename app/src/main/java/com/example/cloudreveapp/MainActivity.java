@@ -123,6 +123,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Common.init();
+        int PERMISSION_REQUEST = 1;
+
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            String[] PERMISSIONS = {android.Manifest.permission.READ_EXTERNAL_STORAGE};
+            ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_REQUEST);
+        }
 
         if(!Common.isLoginTag) {
 
@@ -147,17 +154,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }.start();
-        int PERMISSION_REQUEST = 1;
 
-        if (ActivityCompat.checkSelfPermission(this,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            String[] PERMISSIONS = {android.Manifest.permission.READ_EXTERNAL_STORAGE};
-            ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_REQUEST);
-        }
 
 
         Log.i("TAG11"," this is login msag ,cookie"+Common.loginCookie);
-        fileSyncTask fst = new fileSyncTask(Common.SyncPaths, Common.fileTypes,
+        fileSyncTask fst = new fileSyncTask(Common.SyncPaths,Common.NotSyncPaths, Common.fileTypes,
                 Common.UserHostURL,Common.loginCookie );
         fst.start();
 
