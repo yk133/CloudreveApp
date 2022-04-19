@@ -101,6 +101,7 @@ public class fileSyncTask extends  Thread {
      * @param types   查询类型，比如mp3什么的
      */
     public static List<FileInfo> getAllFiles(String dirPath, String[] types) {
+
         List<FileInfo> fileList = new ArrayList<FileInfo>();
         File f = new File(dirPath);
         if (!f.exists()) {//判断路径是否存在
