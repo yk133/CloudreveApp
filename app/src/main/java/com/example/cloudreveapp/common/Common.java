@@ -6,6 +6,7 @@ import android.os.Environment;
 
 import androidx.annotation.RequiresApi;
 
+import com.example.cloudreveapp.proto.Policy;
 import com.example.cloudreveapp.ui.login.LoginAndSetting;
 
 import java.io.File;
@@ -31,6 +32,8 @@ public class Common {
     static public String[] SyncPaths;
     static public String[] NotSyncPaths;
     static public String[] fileTypes;
+
+    static public Policy DirPolicy=null ;
 
     @RequiresApi(api = Build.VERSION_CODES.S)
     public static void init() {

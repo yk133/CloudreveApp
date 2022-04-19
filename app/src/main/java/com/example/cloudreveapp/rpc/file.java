@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.example.cloudreveapp.common.Common;
 import com.example.cloudreveapp.common.http;
+import com.example.cloudreveapp.proto.Policy;
 import com.example.cloudreveapp.proto.SearchFile;
 
 import org.json.JSONArray;
@@ -21,7 +22,8 @@ public class file {
 
     static final String SearchFileByMD5sURL = "/api/v3/file/md5_search";
     static final String UploadURL = "/api/v3/file/upload";
-    static final String EnvPathSDCARD = Environment.getExternalStorageDirectory().getPath();;
+    static final String EnvPathSDCARD = Environment.getExternalStorageDirectory().getPath();
+    ;
 
     static public List<SearchFile> SearchFileByMD5s(String host, JSONObject body) throws Exception {
 
@@ -70,22 +72,23 @@ public class file {
     //  -H 'Content-Type: application/json' \
     //  -H 'Cookie: cloudreve-session=xxxxxxxxxxx' \
     //  -d '{"path":"/rrr","size":22129,"name":"xxxxxx.png","policy_id":"XMCg","last_modified":1613999566839}'
-    static public boolean UploadFile(String host, String filePath,String rootName) throws Exception {
+    static public boolean UploadFile(String host, String filePath, String rootName) throws Exception {
         File f = new File(filePath);
         if (!f.exists()) {
-            Log.w("UploadFile","f is not exist");
+            Log.w("UploadFile", "f is not exist");
             return false;
         }
         String fatherPath = f.getParent();
         String path = fatherPath.replace(EnvPathSDCARD, "");
-        path = "/"+rootName+path;
-        Log.i("UploadFile","path "+path);
+        path = "/" + rootName + path;
+        Log.i("UploadFile", "path " + path);
 
-        if(!directory.CreateAbsDirectoryIfNotExist(path,host)){
-            return false ;
+        if (!directory.CreateAbsDirectoryIfNotExist(path, host)) {
+            return false;
         }
 
-        String getPolicy = directory.getPolicy();
+        if (Common.DirPolicy == null)
+            Common.DirPolicy = directory.GetDirPolicy(path, host);
 
         okhttp3.Headers.Builder headersbuilder = new okhttp3.Headers.Builder();
         headersbuilder.add("content-type", "application/json");
@@ -97,7 +100,7 @@ public class file {
             body.put("path", path);
             body.put("size", f.length());
             body.put("name", f.getName());
-            body.put("policy_id", "");
+            body.put("policy_id", Common.DirPolicy.getId());
             body.put("last_modified", f.lastModified());
             RequestBody requestBody = RequestBody.create(JSON, String.valueOf(body));
             okhttp3.Response response = http.DoPut(host + UploadURL,

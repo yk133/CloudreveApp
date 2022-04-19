@@ -123,7 +123,7 @@ public class http {
         return res;
     }
 
-    public static String DoGet(String url, Headers hds) {
+    public static String DoGetString(String url, Headers hds) {
 
         //第一步创建OKHttpClient
         OkHttpClient client = new OkHttpClient.Builder()
@@ -149,6 +149,42 @@ public class http {
             e.printStackTrace();
         }
         return res;
+    }
+
+
+    public static Response DoGet(String url, Headers hds ) throws Exception {
+
+        //第一步创建OKHttpClient
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        // loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+        OkHttpClient client = new OkHttpClient.Builder().dns(new engDNS())
+                .addInterceptor(loggingInterceptor)
+                .build();
+
+        //第三步创建Rquest
+        Request request = new Request.Builder()
+                .url(url)
+                .headers(hds)
+                .get()
+                .build();
+        //第四步创建call回调对象
+        final Call call = client.newCall(request);
+        //第五步发起请求
+        String res = null;
+
+        try {
+            Response response = call.execute();
+
+            Log.i("response", response.body().toString());
+
+            return response;
+        } catch (Exception e) {
+
+            Log.i("Exception", e.toString());
+            e.printStackTrace();
+            throw   e ;
+        }
     }
 }
 

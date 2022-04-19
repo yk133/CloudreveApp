@@ -185,6 +185,9 @@ public class fileSyncTask extends  Thread {
 
             Log.i("fileUpload", "make file " + f.Path);
             try {
+                // todo  if f.session is exist ,must delete it on cloud first
+
+
                 // upload
                 if (!file.UploadFile(Common.UserHostURL, f.Path,deviceName)) {
                     Log.w("fileUpload", "UploadFile result is false ");
