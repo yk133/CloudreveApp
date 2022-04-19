@@ -80,10 +80,12 @@ public class fileSyncTask extends  Thread {
         List<FileInfo> fileList = new ArrayList<FileInfo>();
         for (String path : paths) {
             List<FileInfo> fl = getAllFiles(path, fileTypes);
-            for (FileInfo x : fl) {
-                int flag=0;
-                for (String n : notInList) if (x.Path.contains(n))flag ++;
-                if(flag==0)fileList.add(x);
+            if(fl!=null) {
+                for (FileInfo x : fl) {
+                    int flag = 0;
+                    for (String n : notInList) if (x.Path.contains(n)) flag++;
+                    if (flag == 0) fileList.add(x);
+                }
             }
         }
 
@@ -97,18 +99,19 @@ public class fileSyncTask extends  Thread {
      * @param types   查询类型，比如mp3什么的
      */
     public static List<FileInfo> getAllFiles(String dirPath, String[] types) {
+
+        List<FileInfo> fileList = new ArrayList<FileInfo>();
         File f = new File(dirPath);
         if (!f.exists()) {//判断路径是否存在
-            return null;
+            return fileList;
         }
 
         File[] files = f.listFiles();
 
-        if (files == null) {//判断权限
-            return null;
+        if (files == null) {
+            return fileList;
         }
 
-        List<FileInfo> fileList = new ArrayList<FileInfo>();
         for (File fs : files) {//遍历目录
             if (fs.isFile()) {
 
@@ -122,7 +125,7 @@ public class fileSyncTask extends  Thread {
                 }
             } else if (fs.isDirectory()) {//子目录
                 List<FileInfo> fl = getAllFiles(fs.getAbsolutePath(), types);
-                if (fl != null) fileList.addAll(fl);
+                fileList.addAll(fl);
             }
 
         }

@@ -179,7 +179,7 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
                         finish();
                     } else {
                         showToast(msg[0]);
-                        return  ;
+
                     }
 
                 } catch (Exception e) {
@@ -209,8 +209,7 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
 
 
     /**
-     * 模拟登录情况
-     * 用户名csdn，密码123456，就能登录成功，否则登录失败
+     * login
      */
     private void login( ) {
 
@@ -244,28 +243,28 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
                     String msg[] = checkLoginOK(getHost(), getUserName(), getPassword());
                     if (msg == null) {
                         showToast("内部错误，请重新尝试！");
-                        return;
+
                     } else if (msg[0].equals("success")) {
                         showToast("登录成功");
                         saveUserInfo();//记录下当前用户信息
-                        Common.loginCookie=msg[1];
+                        Common.loginCookie = msg[1];
                         setLoginBtnClickable(true);  //这里解放登录按钮，设置为可以点击
                         hideLoading();//隐藏加载框
-                        Common.isLoginTag =true;
+                        Common.isLoginTag = true;
 
                         Intent intent = new Intent(ctx, MainActivity.class);
-                        startActivity(intent );
+                        startActivity(intent);
                         finish();
-
+                        return;
                     } else {
                         showToast(msg[0]);
-                        return;
                     }
 
                 } catch (Exception e) {
                     e.printStackTrace();
                     showToast("登录失败，请检查网络后再试");
                 }
+                setLoginBtnClickable(true);
             }
         };
         loginRunnable.start();
