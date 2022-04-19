@@ -5,7 +5,6 @@ import android.util.Log;
 
 import java.io.IOException;
 
-import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -30,7 +29,7 @@ public class http {
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
        // loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
-        OkHttpClient client = new OkHttpClient.Builder().dns(new EngDNS())
+        OkHttpClient client = new OkHttpClient.Builder().dns(new engDNS())
                 .addInterceptor(loggingInterceptor)
                 .build();
 
@@ -39,6 +38,41 @@ public class http {
                 .url(url)
                 .headers(hds)
                 .post(body)
+                .build();
+        //第四步创建call回调对象
+        final Call call = client.newCall(request);
+        //第五步发起请求
+        String res = null;
+
+        try {
+            Response response = call.execute();
+
+            Log.i("response", response.body().toString());
+
+            return response;
+        } catch (Exception e) {
+
+            Log.i("Exception", e.toString());
+            e.printStackTrace();
+            throw   e ;
+        }
+    }
+
+    public static Response DoPut(String url, Headers hds, RequestBody body) throws Exception {
+
+        //第一步创建OKHttpClient
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+       // loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+        OkHttpClient client = new OkHttpClient.Builder().dns(new engDNS())
+                .addInterceptor(loggingInterceptor)
+                .build();
+
+        //第三步创建Rquest
+        Request request = new Request.Builder()
+                .url(url)
+                .headers(hds)
+                .put(body)
                 .build();
         //第四步创建call回调对象
         final Call call = client.newCall(request);
@@ -118,7 +152,7 @@ public class http {
     }
 }
 
-class EngDNS implements Dns {
+class engDNS implements Dns {
     @Override
     public List<InetAddress> lookup(String hostname) throws UnknownHostException {
         if (TextUtils.isEmpty(hostname)) {

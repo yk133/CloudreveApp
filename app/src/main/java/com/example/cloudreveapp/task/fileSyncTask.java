@@ -1,10 +1,9 @@
 package com.example.cloudreveapp.task;
 
-import static com.example.cloudreveapp.rpc.file.SearchFileByMD5s;
-
 import android.util.Log;
 
 import com.example.cloudreveapp.common.Common;
+import com.example.cloudreveapp.common.systemUtil;
 import com.example.cloudreveapp.common.utils;
 import com.example.cloudreveapp.proto.SearchFile;
 import com.example.cloudreveapp.rpc.file;
@@ -18,10 +17,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class FileInfo {
+class fileInfo {
     String Path, MD5;
 
-    FileInfo(String Path, String MD5) {
+    fileInfo(String Path, String MD5) {
         this.Path = Path;
         this.MD5 = MD5;
     }
@@ -56,16 +55,16 @@ public class fileSyncTask extends  Thread {
     }
 
     void fatch() {
-        List<FileInfo> fs = getFilePaths();
+        List<fileInfo> fs = getFilePaths();
         int index = 1;
 
         Log.i("TAG", "fs size " + fs);
-        List<FileInfo> batchList = new ArrayList<>();
-        for (FileInfo x : fs) {
+        List<fileInfo> batchList = new ArrayList<>();
+        for (fileInfo x : fs) {
             Log.i("TAG11", " file " + x.Path);
         }
 
-        for (FileInfo fi : fs) {
+        for (fileInfo fi : fs) {
             if (index % batchSize == 0) {
                 // check file exists in cloud
                 checkFileAndUploadBatch(batchList);
@@ -75,16 +74,17 @@ public class fileSyncTask extends  Thread {
             }
             batchList.add(fi);
         }
-        checkFileAndUploadBatch(batchList);
+        if (batchList.size() > 0) checkFileAndUploadBatch(batchList);
 
     }
 
-    List<FileInfo> getFilePaths() {
+    List<fileInfo> getFilePaths() {
 
-        List<FileInfo> fileList = new ArrayList<FileInfo>();
+        List<fileInfo> fileList = new ArrayList<fileInfo>();
         for (String path : paths) {
-            List<FileInfo> fl = getAllFiles(path, fileTypes);
-            for (FileInfo x : fl) {
+            List<fileInfo> fl = getAllFiles(path, fileTypes);
+
+            for (fileInfo x : fl) {
                 int flag = 0;
                 for (String n : notInPaths) if (x.Path.contains(n)) flag++;
                 if (flag == 0) fileList.add(x);
@@ -100,9 +100,9 @@ public class fileSyncTask extends  Thread {
      * @param dirPath 需要查询的文件目录
      * @param types   查询类型，比如mp3什么的
      */
-    public static List<FileInfo> getAllFiles(String dirPath, String[] types) {
+    public static List<fileInfo> getAllFiles(String dirPath, String[] types) {
 
-        List<FileInfo> fileList = new ArrayList<FileInfo>();
+        List<fileInfo> fileList = new ArrayList<fileInfo>();
         File f = new File(dirPath);
         if (!f.exists()) {//判断路径是否存在
             return fileList;
@@ -121,12 +121,12 @@ public class fileSyncTask extends  Thread {
                     if (fs.getName().endsWith(type)) {
                         String filePath = fs.getAbsolutePath();//获取文件路径
                         String md5 = utils.getFileMD5(fs);
-                        FileInfo fi = new FileInfo(filePath, md5);
+                        fileInfo fi = new fileInfo(filePath, md5);
                         fileList.add(fi);
                     }
                 }
             } else if (fs.isDirectory()) {//子目录
-                List<FileInfo> fl = getAllFiles(fs.getAbsolutePath(), types);
+                List<fileInfo> fl = getAllFiles(fs.getAbsolutePath(), types);
                 fileList.addAll(fl);
             }
 
@@ -135,13 +135,15 @@ public class fileSyncTask extends  Thread {
     }
 
     // checkFileAndUpload check and update
-    void checkFileAndUploadBatch(List<FileInfo> fi) {
+    List<fileInfo> checkFileAndUploadBatch(List<fileInfo> fi) {
+
+        List<fileInfo> fileNotInList = new ArrayList<>();
         if (fi == null) {
             Log.w("File", "checkFileAndUpload fi is null ");
-            return;
+            return fileNotInList;
         }
         JSONArray ja = new JSONArray();
-        for (FileInfo f : fi) {
+        for (fileInfo f : fi) {
             ja.put(f.MD5);
         }
 
@@ -150,12 +152,49 @@ public class fileSyncTask extends  Thread {
             JSONObject body = new JSONObject();
             body.put("type", "md5");
             body.put("md5", ja);
-            List<SearchFile> res = file.SearchFileByMD5s(Common.UserHostURL, Common.loginCookie, body);
+            List<SearchFile> res = file.SearchFileByMD5s(Common.UserHostURL, body);
+            HashMap<String, SearchFile> mp = new HashMap<>();
 
+            for (SearchFile searchFile : res) {
+                //Log.i("file", "search file res " + xx.toString());
+                mp.put(searchFile.MD5, searchFile);
+            }
+            for (fileInfo f : fi) {
+                if (mp.get(f.MD5) == null) {
+                    fileNotInList.add(f);
+                }
+            }
+
+            needUpload(fileNotInList);
         } catch (Exception e) {
             Log.e("file", e.toString());
 
         }
+
+        return fileNotInList;
+    }
+
+    void needUpload(List<fileInfo> uploadList) {
+        String brand = systemUtil.getDeviceBrand();
+        String model = systemUtil.getSystemModel();
+        String deviceName = brand + " " + model;
+        Log.i("fileUpload", "DeviceName" + deviceName);
+
+
+        for (fileInfo f : uploadList) {
+
+            Log.i("fileUpload", "make file " + f.Path);
+            try {
+                // upload
+                if (!file.UploadFile(Common.UserHostURL, f.Path,deviceName)) {
+                    Log.w("fileUpload", "UploadFile result is false ");
+                    continue;
+                }
+            } catch (Exception e) {
+                Log.e("fileUpload", "Exception" + e.toString());
+            }
+        }
+
     }
 
 }
