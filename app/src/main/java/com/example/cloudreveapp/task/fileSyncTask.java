@@ -1,12 +1,15 @@
 package com.example.cloudreveapp.task;
 
+import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.cloudreveapp.common.Common;
 import com.example.cloudreveapp.common.systemUtil;
 import com.example.cloudreveapp.common.utils;
 import com.example.cloudreveapp.proto.SearchFile;
 import com.example.cloudreveapp.rpc.file;
+import com.example.cloudreveapp.ui.login.LoginAndSetting;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -49,6 +52,7 @@ public class fileSyncTask extends  Thread {
 
     @Override
     public void run() {
+
 
         fatch();
 

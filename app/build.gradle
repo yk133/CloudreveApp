@@ -1,6 +1,15 @@
+
+buildscript {
+    repositories {
+        jcenter()
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+    }
+}
 plugins {
     id 'com.android.application'
 }
+
+
 
 android {
     compileSdk 32
@@ -28,13 +37,36 @@ android {
     buildFeatures {
         viewBinding true
     }
+
 }
 
+
+
+
 dependencies {
+
+     implementation 'com.leon:lfilepickerlibrary:1.8.0'
+    // implementation "com.github.ns3chz:Picker:1.0.1"
+
+    //implementation 'cn.imlibo:FilePicker:v0.0.5_alpha'
+
+    //implementation 'com.nbsp:materialfilepicker:1.9.1'   ok -
+
+    // implementation 'com.nononsenseapps:filepicker:4.1.0'
+
+
+    //implementation 'com.github.jaiselrahman:FilePicker:1.3.2'
+
+
+    // implementation 'me.rosuh:AndroidFilePicker:0.8.2'  ok
+
+    // implementation  'com.adityak:browsemyfiles:1.9'
+
+    //implementation 'com.android.support:support-v4:25.3.1-alpha1'
     implementation 'com.squareup.okhttp3:logging-interceptor:3.6.0'
     implementation 'androidx.activity:activity:1.2.0-beta01'
     implementation 'androidx.fragment:fragment:1.3.0-beta01'
-    implementation 'com.squareup.okhttp3:okhttp:3.12.0'
+    implementation 'com.squareup.okhttp3:okhttp:3.6.0'
     implementation 'androidx.appcompat:appcompat:1.3.0'
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'

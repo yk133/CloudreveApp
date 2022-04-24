@@ -1,6 +1,10 @@
 package com.example.cloudreveapp.common;
 
+import static android.content.Context.MODE_PRIVATE;
+
+import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Environment;
 
@@ -11,7 +15,9 @@ import com.example.cloudreveapp.ui.login.LoginAndSetting;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Common {
 
@@ -20,6 +26,11 @@ public class Common {
     static public final String CONST_HOST = "HOST";
     static public final String CONST_USER_NAME = "USER_NAME";
     static public final String CONST_USER_PWD = "USER_PWD";
+    static public final int  REQUESTCODE_FROM_ACTIVITY = 1001;
+
+    public  static String LocalStorageName = "SP";
+    public  static String SYNC_PATHS = "SYNC_PATHS";
+
 
     // var
     static public boolean isLoginTag = false;
@@ -29,6 +40,7 @@ public class Common {
     static public String UserName = "";
     static public String UserPwd = "";
 
+    // do not used
     static public String[] SyncPaths;
     static public String[] NotSyncPaths;
     static public String[] fileTypes;
@@ -45,6 +57,8 @@ public class Common {
                 sdcardPath + File.separator + "DCIM/",
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getPath()
         };
+
+
         NotSyncPaths = new String[]{
                 sdcardPath + File.separator + "/Pictures/weibo/",
         };

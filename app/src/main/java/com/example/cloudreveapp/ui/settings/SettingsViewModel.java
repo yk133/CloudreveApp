@@ -1,4 +1,4 @@
-package com.example.cloudreveapp.ui.notifications;
+package com.example.cloudreveapp.ui.settings;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;

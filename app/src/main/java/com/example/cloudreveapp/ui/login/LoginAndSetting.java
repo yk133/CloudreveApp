@@ -14,7 +14,6 @@ import android.widget.CompoundButton;
 import com.example.cloudreveapp.MainActivity;
 import com.example.cloudreveapp.R;
 import com.example.cloudreveapp.common.Common;
-import com.example.cloudreveapp.common.http;
 import com.example.cloudreveapp.rpc.login;
 
 import android.text.InputType;
@@ -22,13 +21,6 @@ import android.widget.*;
 
 import androidx.core.app.ActivityCompat;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import okhttp3.Headers;
-import okhttp3.MediaType;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 public class LoginAndSetting extends Activity implements View.OnClickListener, CompoundButton.OnCheckedChangeListener {
 
@@ -42,7 +34,6 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
 
     private Dialog mLoadingDialog; //显示正在加载的对话框
 
-    private static String LocalStorageName = "SP";
 
 
     @Override
@@ -87,7 +78,7 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
      */
     public String getLocalName() {
         Context ctx = LoginAndSetting.this;
-        SharedPreferences sp = ctx.getSharedPreferences(LocalStorageName, MODE_PRIVATE);
+        SharedPreferences sp = ctx.getSharedPreferences(Common.LocalStorageName, MODE_PRIVATE);
         String userName = sp.getString(Common.CONST_USER_NAME, "");
 
         return userName;
@@ -99,7 +90,7 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
      */
     public String getLocalPassword() {
         Context ctx = LoginAndSetting.this;
-        SharedPreferences sp = ctx.getSharedPreferences(LocalStorageName, MODE_PRIVATE);
+        SharedPreferences sp = ctx.getSharedPreferences(Common.LocalStorageName, MODE_PRIVATE);
 
         String userPwd = sp.getString(Common.CONST_USER_PWD, "");
         return userPwd;
@@ -128,7 +119,7 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
         getPermission();
 
         Context ctx = LoginAndSetting.this;
-        SharedPreferences sp = ctx.getSharedPreferences(LocalStorageName, MODE_PRIVATE);
+        SharedPreferences sp = ctx.getSharedPreferences(Common.LocalStorageName, MODE_PRIVATE);
 
         String userHost = sp.getString(Common.CONST_HOST, "");
         String userName = sp.getString(Common.CONST_USER_NAME, "");
@@ -278,7 +269,7 @@ public class LoginAndSetting extends Activity implements View.OnClickListener, C
      */
     public void saveUserInfo() {
         Context ctx = LoginAndSetting.this;
-        SharedPreferences sp = ctx.getSharedPreferences(LocalStorageName, MODE_PRIVATE);
+        SharedPreferences sp = ctx.getSharedPreferences(Common.LocalStorageName, MODE_PRIVATE);
         SharedPreferences.Editor ed = sp.edit();
 
         ed.putString(Common.CONST_HOST, getHost());

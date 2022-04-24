@@ -13,13 +13,13 @@
 
     <fragment
         android:id="@+id/navigation_sync"
-        android:name="com.example.cloudreveapp.ui.dashboard.SyncFragment"
+        android:name="com.example.cloudreveapp.ui.sync.SyncFragment"
         android:label="@string/title_sync"
         tools:layout="@layout/fragment_sync" />
 
     <fragment
         android:id="@+id/navigation_settings"
-        android:name="com.example.cloudreveapp.ui.notifications.SettingsFragment"
+        android:name="com.example.cloudreveapp.ui.settings.SettingsFragment"
         android:label="@string/title_settings"
         tools:layout="@layout/fragment_settings" />
 </navigation>
