@@ -2,28 +2,28 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.cloudreveapp">
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"  />
-    <!-- 在SDCard中创建与删除文件权限 -->
-    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"
-        tools:ignore="ProtectedPermissions" />
-    <!-- 往SDCard写入数据权限 -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" /> <!-- 在SDCard中创建与删除文件权限 -->
+    <uses-permission
+        android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"
+        tools:ignore="ProtectedPermissions" /> <!-- 往SDCard写入数据权限 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
-        android:requestLegacyExternalStorage="true"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CloudreveApp"
-        android:usesCleartextTraffic="true" >
-
-
-
+        android:usesCleartextTraffic="true">
+        <activity
+            android:name=".ui.sync.FileTypeActivity"
+            android:exported="false"
+            android:label="@string/title_activity_file_type" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -34,10 +34,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-
-        <activity  android:name=".ui.login.LoginAndSetting"  android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.login.LoginAndSetting"
+            android:screenOrientation="portrait" />
     </application>
-
 
 </manifest>

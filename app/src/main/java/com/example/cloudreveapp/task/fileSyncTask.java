@@ -1,6 +1,7 @@
 package com.example.cloudreveapp.task;
 
 import android.content.Context;
+import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -170,6 +171,12 @@ public class fileSyncTask extends  Thread {
             }
 
             needUpload(fileNotInList);
+            if (fileNotInList.size() >  0) {
+                Message msg = new Message();
+                msg.obj = "总共完成同步文件 " + fileNotInList.size()+" 个";
+                // 把消息发送到主线程，在主线程里现实Toast
+                Common.handler.sendMessage(msg);
+            }
         } catch (Exception e) {
             Log.e("file", e.toString());
 
@@ -196,6 +203,14 @@ public class fileSyncTask extends  Thread {
                 if (!file.UploadFile(Common.UserHostURL, f.Path,deviceName)) {
                     Log.w("fileUpload", "UploadFile result is false ");
                     continue;
+                }
+
+                int num = (int) (Math.random() * 100);
+                if (num%3==0) {
+                    Message msg = new Message();
+                    msg.obj = "已同步文件： " + f.Path;
+                    // 把消息发送到主线程，在主线程里现实Toast
+                    Common.handler.sendMessage(msg);
                 }
             } catch (Exception e) {
                 Log.e("fileUpload", "Exception" + e.toString());

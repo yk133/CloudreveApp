@@ -7,5 +7,12 @@
     tools:context=".ui.settings.SettingsFragment">
 
 
+    <Button
+        android:id="@+id/startSyncFile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:text="点击开始同步！" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

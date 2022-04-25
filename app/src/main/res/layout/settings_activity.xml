@@ -1,0 +1,24 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/settings"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <Button
+            android:id="@+id/addFileType"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:text="新增文件类型" />
+
+        <ListView
+            android:id="@+id/listViewFileType"
+            android:layout_width="match_parent"
+            android:layout_height="665dp" />
+    </FrameLayout>
+
+
+</LinearLayout>

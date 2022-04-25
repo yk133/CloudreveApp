@@ -2,7 +2,6 @@ package com.example.cloudreveapp;
 
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -11,6 +10,7 @@ import android.os.Bundle;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.FragmentManager;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -21,7 +21,6 @@ import com.example.cloudreveapp.databinding.ActivityMainBinding;
 import com.example.cloudreveapp.task.fileSyncTask;
 import com.example.cloudreveapp.ui.dialog.loadingDialog;
 import com.example.cloudreveapp.ui.login.LoginAndSetting;
-import com.example.cloudreveapp.ui.sync.SyncFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.leon.lfilepickerlibrary.LFilePicker;
 
@@ -33,7 +32,8 @@ import android.content.ClipData;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.webkit.JsResult;
@@ -42,16 +42,11 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import java.lang.String;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -62,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     private ValueCallback<Uri> uploadMessage;
     private ValueCallback<Uri[]> uploadMessageAboveL;
     private final static int FILE_CHOOSER_RESULT_CODE = 10000;
-
+    private FragmentManager manager;
 
     public void btn_1(View v) {
         //创建对象
@@ -158,6 +153,21 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Common.init();
+
+        Common.handler = this.handler;
+//        manager = getSupportFragmentManager();
+//        /*
+//         * 这里为什么要进行空判断，因为在屏幕旋转的时候，系统会执行onSaveInstanceState
+//         * 方法去保存当前activity的状态，然后activity会重建，执行onCreate方法，如果我们不判断
+//         * savedInstanceState是否为空，那么每次就会执行下面的commit操作，向Fragmnet传递参数，
+//         * 这样参数的却会保留下来，但是我们不应该每次都去传递参数。当进行了空判断时，当Activity重建
+//         * 的时候，会调用Fragment的默认构造函数，所以我们传递过去的参数不能保留了。
+//         */
+//        if(savedInstanceState == null){
+//            manager.beginTransaction().replace(R.id.fl_main, new FragmentOne("params")).commit();
+//        }
+
+
         int PERMISSION_REQUEST = 1;
 
         if (ActivityCompat.checkSelfPermission(this,
@@ -198,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
         }
         Toast.makeText(getApplicationContext(), "开始同步文件夹 "+msg,
                 Toast.LENGTH_SHORT).show();
-        fileSyncTask fst = new fileSyncTask(syncPaths, Common.NotSyncPaths, Common.fileTypes,
+        fileSyncTask fst = new fileSyncTask(syncPaths, Common.DefaultNotSyncPaths, Common.defaultFileTypes,
                 Common.UserHostURL, Common.loginCookie);
         fst.start();
 
@@ -324,6 +334,15 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+    };
+
+    @SuppressLint("HandlerLeak")
+    private final Handler handler = new Handler() {
+
+        public void handleMessage(Message msg) {
+            String str = (String) msg.obj;
+            Toast.makeText(MainActivity.this, str, Toast.LENGTH_SHORT).show();
+        };
     };
 
     String[] getSyncPaths() {
