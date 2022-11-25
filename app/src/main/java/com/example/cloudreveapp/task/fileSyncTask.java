@@ -66,20 +66,21 @@ public class fileSyncTask extends  Thread {
         Log.i("TAG", "fs size " + fs);
         List<fileInfo> batchList = new ArrayList<>();
         for (fileInfo x : fs) {
-            Log.i("TAG11", " file " + x.Path);
+            Log.i("TAG", " file " + x.Path);
         }
 
         for (fileInfo fi : fs) {
             if (index % batchSize == 0) {
                 // check file exists in cloud
-                checkFileAndUploadBatch(batchList);
+                checkFileAndUploadBatchLimit(batchList);
 
 
                 batchList.clear();
             }
             batchList.add(fi);
+            index++;
         }
-        if (batchList.size() > 0) checkFileAndUploadBatch(batchList);
+        if (batchList.size() > 0) checkFileAndUploadBatchLimit(batchList);
 
     }
 
@@ -139,6 +140,24 @@ public class fileSyncTask extends  Thread {
         return fileList;
     }
 
+
+    // checkFileAndUpload check and update
+    List<fileInfo> checkFileAndUploadBatchLimit(List<fileInfo> files) {
+//        List<fileInfo> batchList = new ArrayList<>();
+//        List<fileInfo> res = new ArrayList<>();
+//        int index = 0;
+//        for (fileInfo x : files) {
+//            batchList.add(x);
+//            index++;
+//            if (index % 200 == 0) {
+//                List<fileInfo> fileNotInList = checkFileAndUploadBatch(batchList);
+//                res.addAll(fileNotInList);
+//                batchList = new ArrayList<>();
+//            }
+//        }
+        return checkFileAndUploadBatch(files);
+    }
+
     // checkFileAndUpload check and update
     List<fileInfo> checkFileAndUploadBatch(List<fileInfo> fi) {
 
@@ -191,27 +210,23 @@ public class fileSyncTask extends  Thread {
         String deviceName = brand + " " + model;
         Log.i("fileUpload", "DeviceName" + deviceName);
 
-
         for (fileInfo f : uploadList) {
 
             Log.i("fileUpload", "make file " + f.Path);
             try {
                 // todo  if f.session is exist ,must delete it on cloud first
 
-
                 // upload
-                if (!file.UploadFile(Common.UserHostURL, f.Path,deviceName)) {
+                if (!file.UploadFile(Common.UserHostURL, f.Path, deviceName)) {
                     Log.w("fileUpload", "UploadFile result is false ");
                     continue;
                 }
 
-                int num = (int) (Math.random() * 100);
-                if (num%3==0) {
-                    Message msg = new Message();
-                    msg.obj = "已同步文件： " + f.Path;
-                    // 把消息发送到主线程，在主线程里现实Toast
-                    Common.handler.sendMessage(msg);
-                }
+                Message msg = new Message();
+                msg.obj = "已同步文件：" + f.Path;
+                // 把消息发送到主线程，在主线程里现实Toast
+                Common.handler.sendMessage(msg);
+
             } catch (Exception e) {
                 Log.e("fileUpload", "Exception" + e.toString());
             }

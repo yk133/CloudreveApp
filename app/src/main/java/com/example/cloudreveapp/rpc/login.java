@@ -51,11 +51,11 @@ public class login {
             cookie = rh.get("set-cookie");
             try {
                 JSONObject data = jsonAll.getJSONObject("data");
-                JSONObject policy = data.getJSONObject("policy");
-                String upUrl = (String) policy.get("upUrl");
-                if (!upUrl.isEmpty()) {
-                    Common.upLoadURL = upUrl;
-                }
+                //JSONObject policy = data.getJSONObject("policy");
+                //String upUrl = (String) policy.get("upUrl");
+//                if (!upUrl.isEmpty()) {
+//                    Common.upLoadURL = upUrl;
+//                }
             }catch (JSONException je){
                 je.printStackTrace();
             }

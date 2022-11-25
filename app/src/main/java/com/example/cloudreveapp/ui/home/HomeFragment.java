@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -25,6 +26,7 @@ import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.DownloadListener;
 import android.webkit.JsResult;
+import android.webkit.SslErrorHandler;
 import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -98,11 +100,6 @@ public class HomeFragment extends Fragment {
         webSettings.setSavePassword(true );;
         WebSettings settings = webView.getSettings();
         settings.setDomStorageEnabled(true);
-//        webView.loadUrl("file:///android_asset/test.html");//加载asset文件夹下html
-
-        //使用webview显示html代码
-//        webView.loadDataWithBaseURL(null,"<html><head><title> 欢迎您 </title></head>" +
-//                "<body><h2>使用webview显示 html代码</h2></body></html>", "text/html" , "utf-8", null);
 
         webView.addJavascriptInterface(this,"android");//添加js监听 这样html就能调用客户端
         webView.setWebChromeClient(webChromeClient);
@@ -250,6 +247,11 @@ public class HomeFragment extends Fragment {
             //return getNewResponse(url, request.getRequestHeaders());
             return super.shouldInterceptRequest(view, url);
         }
+
+        public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+            handler.proceed();
+        }
+
 
         private WebResourceResponse getNewResponse(String url, Map<String, String> headers) {
 

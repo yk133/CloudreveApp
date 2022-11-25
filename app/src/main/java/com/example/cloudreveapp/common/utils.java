@@ -83,6 +83,7 @@ public class utils {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        assert stringbuffer != null;
         return stringbuffer.toString().toLowerCase();
 
     }

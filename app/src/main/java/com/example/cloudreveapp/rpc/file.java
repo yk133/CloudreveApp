@@ -23,7 +23,7 @@ public class file {
     static final String SearchFileByMD5sURL = "/api/v3/file/md5_search";
     static final String UploadURL = "/api/v3/file/upload";
     static final String EnvPathSDCARD = Environment.getExternalStorageDirectory().getPath();
-    ;
+
 
     static public List<SearchFile> SearchFileByMD5s(String host, JSONObject body) throws Exception {
 

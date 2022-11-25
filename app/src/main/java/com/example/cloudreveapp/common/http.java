@@ -10,6 +10,13 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import okhttp3.Call;
 import okhttp3.Dns;
@@ -20,7 +27,60 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 
+
 public class http {
+    /**
+     * 信任所有https-ssl证书
+     * 航信https-ssl证书是自建的(无耻，不舍得花钱购买)
+     * @return
+     */
+    public static OkHttpClient getUnsafeOkHttpClient( HttpLoggingInterceptor loggingInterceptor) {
+        try {
+            // Create a trust manager that does not validate certificate chains
+            final TrustManager[] trustAllCerts = new TrustManager[] {
+                    new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                        }
+
+                        @Override
+                        public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                        }
+
+                        @Override
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return new java.security.cert.X509Certificate[]{};
+                        }
+                    }
+            };
+
+            // Install the all-trusting trust manager
+            final SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            // Create an ssl socket factory with our all-trusting manager
+            final javax.net.ssl.SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+
+            OkHttpClient.Builder builder = new OkHttpClient.Builder().
+                    dns(new engDNS()).
+                    addInterceptor(loggingInterceptor);
+            builder.sslSocketFactory(sslSocketFactory);
+            builder.hostnameVerifier(new HostnameVerifier() {
+                @Override
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            });
+
+            OkHttpClient okHttpClient = builder
+                    .connectTimeout(10, TimeUnit.SECONDS)//设置连接超时时间
+                    //.readTimeout(20, TimeUnit.SECONDS)//设置读取超时时间
+
+                    .build();
+            return okHttpClient;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 
     public static Response DoPost(String url, Headers hds, RequestBody body) throws Exception {
@@ -29,9 +89,14 @@ public class http {
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
        // loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
-        OkHttpClient client = new OkHttpClient.Builder().dns(new engDNS())
-                .addInterceptor(loggingInterceptor)
-                .build();
+
+        // not support unsafe TLS
+        //  OkHttpClient client = new OkHttpClient.Builder().dns(new engDNS())
+        //    .addInterceptor(loggingInterceptor)
+        //    .build();
+
+        // support unsafe TLS
+        OkHttpClient client=  getUnsafeOkHttpClient(loggingInterceptor);
 
         //第三步创建Rquest
         Request request = new Request.Builder()
@@ -63,10 +128,15 @@ public class http {
         //第一步创建OKHttpClient
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-       // loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
-        OkHttpClient client = new OkHttpClient.Builder().dns(new engDNS())
-                .addInterceptor(loggingInterceptor)
-                .build();
+        // loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+
+        // not support unsafe TLS
+        //  OkHttpClient client = new OkHttpClient.Builder().dns(new engDNS())
+        //    .addInterceptor(loggingInterceptor)
+        //    .build();
+
+        // support unsafe TLS
+        OkHttpClient client=  getUnsafeOkHttpClient(loggingInterceptor);
 
         //第三步创建Rquest
         Request request = new Request.Builder()
@@ -94,10 +164,17 @@ public class http {
     }
 
     public static String  DoPostGetString(String url, Headers hds, RequestBody body) {
+        // loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
 
+        // not support unsafe TLS
+        //  OkHttpClient client = new OkHttpClient.Builder().dns(new engDNS())
+        //    .addInterceptor(loggingInterceptor)
+        //    .build();
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        // support unsafe TLS
         //第一步创建OKHttpClient
-        OkHttpClient client = new OkHttpClient.Builder()
-                .build();
+        OkHttpClient client=  getUnsafeOkHttpClient(loggingInterceptor);
 
         //第三步创建Rquest
         Request request = new Request.Builder()
@@ -125,9 +202,17 @@ public class http {
 
     public static String DoGetString(String url, Headers hds) {
 
+        // loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+
+        // not support unsafe TLS
+        //  OkHttpClient client = new OkHttpClient.Builder().dns(new engDNS())
+        //    .addInterceptor(loggingInterceptor)
+        //    .build();
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        // support unsafe TLS
         //第一步创建OKHttpClient
-        OkHttpClient client = new OkHttpClient.Builder()
-                .build();
+        OkHttpClient client=  getUnsafeOkHttpClient(loggingInterceptor);
 
         //第三步创建Rquest
         Request request = new Request.Builder()
@@ -154,13 +239,17 @@ public class http {
 
     public static Response DoGet(String url, Headers hds ) throws Exception {
 
-        //第一步创建OKHttpClient
+        // loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+
+        // not support unsafe TLS
+        //  OkHttpClient client = new OkHttpClient.Builder().dns(new engDNS())
+        //    .addInterceptor(loggingInterceptor)
+        //    .build();
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-        // loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
-        OkHttpClient client = new OkHttpClient.Builder().dns(new engDNS())
-                .addInterceptor(loggingInterceptor)
-                .build();
+        // support unsafe TLS
+        //第一步创建OKHttpClient
+        OkHttpClient client=  getUnsafeOkHttpClient(loggingInterceptor);
 
         //第三步创建Rquest
         Request request = new Request.Builder()
@@ -210,7 +299,7 @@ class engDNS implements Dns {
                     }
                 }
                 return inetAddressList;
-            } catch (NullPointerException ex) {
+            } catch ( Exception ex) {
                 Log.e("http.dns", "expection " + ex);
                 return Dns.SYSTEM.lookup(hostname);
             }
