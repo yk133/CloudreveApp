@@ -10,7 +10,8 @@ origin : https://github.com/yk133/Cloudreve
 ## 使用方式：
 
 ### 1 下载服务端
-https://github.com/yk133/Cloudreve
+https://github.com/yk133/Cloudreve/releases/tag/3.4.2_01
+
 ### 2 客户端
 https://github.com/yk133/CloudreveApp/releases/tag/v0.0.1
 
