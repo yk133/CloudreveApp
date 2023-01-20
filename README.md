@@ -4,7 +4,7 @@
 
 ## How to use ?
 
-origin : https://github.com/yk133/Cloudreve
+origin : https://github.com/yk133/Cloudreve/tree/merge_origin_new
 
 
 ## 使用方式：
